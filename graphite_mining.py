@@ -25,7 +25,7 @@ class MiningCarbonClient(object):
 
     def run(self):
         while True:
-            lines = [w.getResult() for w in self.workers.itervalues()]
+            lines = [w.getResult() for w in self.workers.itervalues() if w.validate()]
             lines = [item for sublist in lines for item in sublist]
             message = '\n'.join(lines) + '\n'
             print("sending message\n")
@@ -58,9 +58,8 @@ class FlyPoolStats(Worker):
     def getResult(self):
         rewards = 0.
         r = requests.get(self.apiUrl)
-        if r.status_code == 200:
-            data = r.json()['data']
-            rewards = (data['unpaid'] + data['unconfirmed']) / 100000000.
+        data = r.json()['data']
+        rewards = (data['unpaid'] + data['unconfirmed']) / 100000000.
         return ["%s %f %d" % (self.name, rewards, self.now())]
 
     def validate(self):
@@ -86,6 +85,10 @@ class MinerStats(Worker):
             results.append("mining.gpu_power_usage_%i %s %d" % (i,data[i]['gpu_power_usage'],self.now()))
         return results
 
+    def validate(self):
+        #TO-DO: Implement validate
+        return True
+
 class ZCashRate(Worker):
 
     def __init__(self, name):
@@ -95,3 +98,7 @@ class ZCashRate(Worker):
     def getResult(self):
         data = float(requests.get(self.url).json()[0]['price_usd'])
         return ["%s %f %d" % (self.name, data, self.now())]
+
+    def validate(self):
+        r = requests.get(self.url)
+        return r.status_code == 200
