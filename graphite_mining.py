@@ -94,5 +94,4 @@ class ZCashRate(Worker):
 
     def getResult(self):
         data = float(requests.get(self.url).json()[0]['price_usd'])
-        data /= 100000000.
         return ["%s %f %d" % (self.name, data, self.now())]
