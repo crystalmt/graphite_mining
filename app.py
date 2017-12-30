@@ -1,33 +1,39 @@
 import socket
 import sys
 import time
+import argparse
 from graphite_mining import getMinerStats, getPoolStats, getZCashRate
 
-CARBON_SERVER = '127.0.0.1'
-CARBON_PORT = 2003
-
-MINER_API_HOST = '127.0.0.1'
-MINER_API_PORT = 42000
-
-WALLET_ID = ""
-
-DELAY = 60
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Carbon mining client.")
+
+    parser.add_argument("--carbon_server", type=str, required=True, help="carbon server host")
+    parser.add_argument("--carbon_port", type=int, required=True, help="carbon server port")
+
+    parser.add_argument("--wallet", type=str, required=True, help="zcash wallet")
+
+    parser.add_argument("--miner_api_host", type=str, required=True, help="miner api host")
+    parser.add_argument("--miner_api_port", type=int, required=True, help="miner api port")
+
+    parser.add_argument("--delay", type=int, default=60, help="delay interval")
+
+    args = parser.parse_args()
+
     sock = socket.socket()
 
     try:
-        sock.connect( (CARBON_SERVER, CARBON_PORT) )
+        sock.connect( (args.carbon_server, args.carbon_port) )
     except:
-        print("Couldn't connect to %(server)s on port %(port)d, is carbon-agent.py running?" % { 'server': CARBON_SERVER, 'port':CARBON_PORT })
+        print("Couldn't connect to %(server)s on port %(port)d, is carbon-agent.py running?" % { 'server': args.carbon_server, 'port':args.carbon_port })
         sys.exit(1)
 
     while True:
         now = int( time.time() )
         lines = []
 
-        minerStats = getMinerStats(MINER_API_HOST, MINER_API_PORT)
-        poolStats = getPoolStats(WALLET_ID)
+        minerStats = getMinerStats(args.miner_api_host, args.miner_api_port)
+        poolStats = getPoolStats(args.wallet)
         zcashRate = getZCashRate()
 
         zcashUSD = float(zcashRate[0]['price_usd'])
@@ -48,4 +54,4 @@ if __name__ == "__main__":
         print(message)
         print()
         sock.sendall(message)
-        time.sleep(DELAY)
+        time.sleep(args.delay)
